@@ -19,11 +19,11 @@ else ()
 endif ()
 
 # Add the source files
-file(GLOB_RECURSE SOURCES "rc/*.*" "src/*.*" "libharu/*.*" "libpng/*.*")
+file(GLOB_RECURSE SOURCES "rc/*.*" "src/*.*" "libharu/*.*" "libpng/*.*" "ini_phraser/*.*")
 message(STATUS "Source file(s) OK!!!")
 
 # Add the include and lib files
-include_directories(libharu/inc libpng/inc zlib/inc rc/)
+include_directories(libharu/inc libpng/inc zlib/inc rc/ ini_phraser/)
 link_directories(zlib)
 message(STATUS "Include and Lib file(s) OK!!!")
 

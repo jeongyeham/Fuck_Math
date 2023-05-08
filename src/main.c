@@ -67,6 +67,7 @@ int main(void)
 
     if (strcmp(&ini_input_buff, "Y") == 0 || strcmp(&ini_input_buff, "y") == 0)
     {
+        goto HAS_INI;
     }
     else if (strcmp(&ini_input_buff, "N") == 0 || strcmp(&ini_input_buff, "n") == 0)
     {
@@ -99,6 +100,8 @@ NOT_HAS_INI:
 
     printf("please input topics_num\n");
     scanf("%d", &init_env->topics_num);
+
+HAS_INI:
 
     mutex_handle = CreateMutex((LPSECURITY_ATTRIBUTES)NULL,
                                FALSE,
