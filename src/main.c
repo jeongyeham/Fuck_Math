@@ -4,6 +4,7 @@
 #include <setjmp.h>
 #include "hpdf.h"
 #include "windows.h"
+#include "ini.h"
 
 #define getrandom(min, max) (SHORT)((rand() % (int)(((max) + 1) - \
                                                     (min))) +     \
@@ -37,6 +38,13 @@ struct init_para_t
 } _init_params;
 typedef struct init_para_t *init_t;
 
+typedef struct
+{
+    int version;
+    const char *name;
+    const char *email;
+} configuration;
+
 jmp_buf env;
 HANDLE mutex_handle;
 
@@ -46,9 +54,34 @@ const char *ttf_file_name = ".\\input.ttf";
 DWORD WINAPI pdf_task(LPVOID lpParam);
 DWORD WINAPI cli_task(LPVOID lpParam);
 
-void error_handler(HPDF_STATUS error_no,
-                   HPDF_STATUS detail_no,
-                   void *user_data)
+static int handler(void *user, const char *section, const char *name,
+                   const char *value)
+{
+    configuration *pconfig = (configuration *)user;
+
+#define MATCH(s, n) strcmp(section, s) == 0 && strcmp(name, n) == 0
+    if (MATCH("protocol", "version"))
+    {
+        pconfig->version = atoi(value);
+    }
+    else if (MATCH("user", "name"))
+    {
+        pconfig->name = strdup(value);
+    }
+    else if (MATCH("user", "email"))
+    {
+        pconfig->email = strdup(value);
+    }
+    else
+    {
+        return 0; /* unknown section/name, error */
+    }
+    return 1;
+}
+
+static void error_handler(HPDF_STATUS error_no,
+                          HPDF_STATUS detail_no,
+                          void *user_data)
 {
     printf("ERROR: error_no=%04X, detail_no=%u\n", (HPDF_UINT)error_no,
            (HPDF_UINT)detail_no);
@@ -102,6 +135,17 @@ NOT_HAS_INI:
     scanf("%d", &init_env->topics_num);
 
 HAS_INI:
+
+    configuration config;
+
+    if (ini_parse("test.ini", handler, &config) < 0)
+    {
+        printf("Can't load 'test.ini'\n");
+        return 1;
+    }
+    printf("Config loaded from 'test.ini': version=%d, name=%s, email=%s\n",
+           config.version, config.name, config.email);
+    return 0;
 
     mutex_handle = CreateMutex((LPSECURITY_ATTRIBUTES)NULL,
                                FALSE,
@@ -189,5 +233,4 @@ DWORD WINAPI cli_task(LPVOID lpParam)
 {
     init_t initial = (init_t)lpParam;
     return 0;
-    
 }
