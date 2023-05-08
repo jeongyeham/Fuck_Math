@@ -28,7 +28,7 @@ link_directories(zlib)
 message(STATUS "Include and Lib file(s) OK!!!")
 
 # Print map file
-add_link_options(-Wl,-Map=${PROJECT_BINARY_DIR}/${PROJECT_NAME}.map)
+add_link_options()
 
 add_executable(${PROJECT_NAME} ${SOURCES})
 target_link_libraries(${PROJECT_NAME} libzlibstatic.a)

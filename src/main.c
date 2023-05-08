@@ -20,13 +20,13 @@ typedef enum
         all_mixed,
 } enum_operate;
 
-typedef struct _init
+struct init_para_t
 {
     // topics settings
     int min_number;
     int max_number;
     enum_operate operation;
-    int bit_depth;
+    int topics_depth;
     int topics_num;
     BOOL is_valid;
 
@@ -34,7 +34,8 @@ typedef struct _init
     int paper_width;
     int paper_height;
     int font_size;
-} init_t;
+} _init_params;
+typedef struct init_para_t *init_t;
 
 jmp_buf env;
 HANDLE mutex_handle;
@@ -56,19 +57,18 @@ void error_handler(HPDF_STATUS error_no,
 
 int main(void)
 {
-    init_t init_env = {0};
-    char ini_input_buff;
     DWORD pdf_task_ID = -1;
     DWORD cli_task_ID = -1;
+    init_t init_env = malloc(sizeof(_init_params));
+    char ini_input_buff;
 
     printf("Has a ini file ? (Y or N) : ");
     scanf("%s", &ini_input_buff);
 
-    if (strcmp(&ini_input_buff, "Y") == 0 || strcmp(&ini_input_buff, "Y") == 0)
+    if (strcmp(&ini_input_buff, "Y") == 0 || strcmp(&ini_input_buff, "y") == 0)
     {
-        goto HAS_INI;
     }
-    else if (strcmp(&ini_input_buff, "N") == 0)
+    else if (strcmp(&ini_input_buff, "N") == 0 || strcmp(&ini_input_buff, "n") == 0)
     {
         goto NOT_HAS_INI;
     }
@@ -79,10 +79,10 @@ int main(void)
 
 NOT_HAS_INI:
     printf("please input min_number\n");
-    scanf("%d", &init_env.min_number);
+    scanf("%d", &init_env->min_number);
 
     printf("please input max_number\n");
-    scanf("%d", &init_env.max_number);
+    scanf("%d", &init_env->max_number);
 
     printf("please input operation\n");
     printf("  and                    -----> 0\n \
@@ -92,18 +92,14 @@ NOT_HAS_INI:
               and_minus_mixed        -----> 4\n \
               times_divided_mixed    -----> 5\n \
               all_mixed              -----> 6\n");
-    scanf("%d", &init_env.operation);
+    scanf("%d", &init_env->operation);
 
-    printf("please input min_number\n");
-    scanf("%d", &init_env.min_number);
+    printf("please input topics_depth\n");
+    scanf("%d", &init_env->topics_depth);
 
-    printf("please input min_number\n");
-    scanf("%d", &init_env.min_number);
+    printf("please input topics_num\n");
+    scanf("%d", &init_env->topics_num);
 
-
-HAS_INI:
-    printf("okk\n");
-    
     mutex_handle = CreateMutex((LPSECURITY_ATTRIBUTES)NULL,
                                FALSE,
                                NULL);
@@ -111,27 +107,31 @@ HAS_INI:
     HANDLE pdf_task_handle = CreateThread((LPSECURITY_ATTRIBUTES)NULL,
                                           (SIZE_T)0,
                                           (LPTHREAD_START_ROUTINE)&pdf_task,
-                                          (LPVOID)&init_env,
+                                          (LPVOID)init_env,
                                           (DWORD)0,
                                           (LPDWORD)&pdf_task_ID);
 
     HANDLE cli_task_handle = CreateThread((LPSECURITY_ATTRIBUTES)NULL,
                                           (SIZE_T)0,
                                           (LPTHREAD_START_ROUTINE)&cli_task,
-                                          (LPVOID)&init_env,
+                                          (LPVOID)init_env,
                                           (DWORD)0,
                                           (LPDWORD)&cli_task_ID);
-
+    system("pause");
 HAS_SHIT:
     printf("Goodbye\n");
-    system("pause");
-
+    for (int i = 5; i >= 0; i--)
+    {
+        Sleep(1000);
+        printf("program will shutdown in %d s\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b", i);
+        fflush(stdout);
+    }
     return 0;
 };
 
 DWORD WINAPI pdf_task(LPVOID lpParam)
 {
-    init_t *initial = (init_t *)lpParam;
+    init_t initial = (init_t)lpParam;
     HPDF_Doc pdf;
     HPDF_Font font;
     HPDF_Page page;
@@ -184,7 +184,7 @@ DWORD WINAPI pdf_task(LPVOID lpParam)
 
 DWORD WINAPI cli_task(LPVOID lpParam)
 {
-    init_t *initial = (init_t *)lpParam;
-
+    init_t initial = (init_t)lpParam;
     return 0;
+    
 }
