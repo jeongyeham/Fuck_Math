@@ -38,12 +38,13 @@ struct init_para_t
 } _init_params;
 typedef struct init_para_t *init_t;
 
-typedef struct
+struct ini_file_para_t
 {
     int version;
     const char *name;
     const char *email;
-} configuration;
+} _ini_file_params;
+typedef struct ini_file_para_t *ini_file_t;
 
 jmp_buf env;
 HANDLE mutex_handle;
@@ -57,7 +58,7 @@ DWORD WINAPI cli_task(LPVOID lpParam);
 static int handler(void *user, const char *section, const char *name,
                    const char *value)
 {
-    configuration *pconfig = (configuration *)user;
+    ini_file_t pconfig = (ini_file_t)user;
 
 #define MATCH(s, n) strcmp(section, s) == 0 && strcmp(name, n) == 0
     if (MATCH("protocol", "version"))
@@ -100,18 +101,25 @@ int main(void)
 
     if (strcmp(&ini_input_buff, "Y") == 0 || strcmp(&ini_input_buff, "y") == 0)
     {
-        goto HAS_INI;
+        ini_file_t config = malloc(sizeof(_ini_file_params));
+        if (ini_parse("test.ini", handler, config) < 0)
+        {
+            printf("Can't load 'test.ini'\n");
+            goto HAS_NO_INI;
+        }
     }
     else if (strcmp(&ini_input_buff, "N") == 0 || strcmp(&ini_input_buff, "n") == 0)
     {
-        goto NOT_HAS_INI;
+        goto HAS_NO_INI;
     }
     else
     {
         goto HAS_SHIT;
     }
 
-NOT_HAS_INI:
+    goto MAIN_TASK;
+
+HAS_NO_INI:
     printf("please input min_number\n");
     scanf("%d", &init_env->min_number);
 
@@ -134,19 +142,7 @@ NOT_HAS_INI:
     printf("please input topics_num\n");
     scanf("%d", &init_env->topics_num);
 
-HAS_INI:
-
-    configuration config;
-
-    if (ini_parse("test.ini", handler, &config) < 0)
-    {
-        printf("Can't load 'test.ini'\n");
-        return 1;
-    }
-    printf("Config loaded from 'test.ini': version=%d, name=%s, email=%s\n",
-           config.version, config.name, config.email);
-    return 0;
-
+MAIN_TASK:
     mutex_handle = CreateMutex((LPSECURITY_ATTRIBUTES)NULL,
                                FALSE,
                                NULL);
@@ -165,6 +161,7 @@ HAS_INI:
                                           (DWORD)0,
                                           (LPDWORD)&cli_task_ID);
     system("pause");
+    
 HAS_SHIT:
     printf("Goodbye\n");
     for (int i = 5; i >= 0; i--)
